@@ -15,7 +15,9 @@ class Generator(nn.Module):
         self.conv1 = nn.Conv2d(in_channels = 1, out_channels = 3, kernel_size = (3, 3), stride = (1, 1), padding = (1, 1))
         self.conv2 = nn.Conv2d(in_channels = 3, out_channels = 3, kernel_size = (3, 3), stride = (1, 1), padding = (1, 1))
         self.conv3 = nn.Conv2d(in_channels = 3, out_channels = 6, kernel_size = (3, 3), stride = (1, 1), padding = (1, 1))
-        self.conv4 = nn.Conv2d(in_channels = 6, out_channels = 1, kernel_size = (5, 5), stride = (1, 1), padding = (2, 2))
+        self.conv4 = nn.Conv2d(in_channels = 6, out_channels = 9, kernel_size = (5, 5), stride = (1, 1), padding = (2, 2))
+        # Pointwise convolution
+        self.conv5 = nn.Conv2d(in_channels = 9, out_channels = 1, kernel_size = (1, 1), stride = (1, 1), padding = (0, 0))
         self.relu = nn.ReLU()
         self.gelu = nn.GELU()
         self.fc1 = nn.Linear(784, 784)
@@ -39,6 +41,8 @@ class Generator(nn.Module):
         x = self.conv3(x)
         x = self.gelu(x)
         x = self.conv4(x)
+        x = self.gelu(x)
+        x = self.conv5(x)
         x = self.relu(x)
         x = x.reshape((x.shape[0], 1, 28, 28))
         return x
