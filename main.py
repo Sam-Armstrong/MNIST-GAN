@@ -19,6 +19,9 @@ from Discriminator import Discriminator
 from Generator import Generator
 import matplotlib.pyplot as plt
 
+def wasserstein_loss(y_true, y_pred):
+    return torch.mean(y_true * y_pred)
+
 def boundary_seeking_loss(y_pred, y_true):
     """
     Boundary seeking loss.
@@ -28,9 +31,9 @@ def boundary_seeking_loss(y_pred, y_true):
 
 def train():
     batch_size = 10
-    num_epochs = 30
+    num_epochs = 8
 
-    plot_data = np.empty((num_epochs), dtype = float)
+    plot_data = np.empty((num_epochs, 2), dtype = float)
     
     start_time = time.time()
     device = torch.device('cuda')
@@ -48,8 +51,9 @@ def train():
     d_loss = nn.BCELoss() # Discriminator loss function
 
     # Optimizers
-    generator_optimizer = optim.Adam(generator.parameters(), lr = 1e-5)
-    discriminator_optimizer = optim.Adam(discriminator.parameters(), lr = 1e-5)
+    #generator_optimizer = optim.SGD(generator.parameters(), lr = 3e-5)
+    generator_optimizer = optim.RMSprop(generator.parameters(), lr = 1e-6, momentum = 0, weight_decay = 1e-4)
+    discriminator_optimizer = optim.RMSprop(discriminator.parameters(), lr = 5e-7, momentum = 0, weight_decay = 1e-4) #optim.SGD(discriminator.parameters(), lr = 3e-5)
 
     
     for epoch in range(num_epochs):
@@ -62,30 +66,48 @@ def train():
             # Adversarial ground truths
             valid = Variable(Tensor(imgs.shape[0], 1).fill_(1.0).to(device), requires_grad = False)
             fake = Variable(Tensor(imgs.shape[0], 1).fill_(0.0).to(device), requires_grad = False)
-            real_imgs = Variable(imgs.type(Tensor).to(device))
-
-            ## Training the Generator
-            generator_optimizer.zero_grad()
-            gen_input = Variable(Tensor(np.random.rand(batch_size, 16)).to(device)) # Noise for the generator input
+            real_imgs = imgs.type(Tensor).to(device) ##
+            
+            gen_input = Tensor(np.random.rand(batch_size, 16)).to(device) # Noise for the generator input ##
             gen_imgs = generator(gen_input) # Generate a batch of images
-            g_loss = boundary_seeking_loss(discriminator(gen_imgs), valid) # Loss measures the generator's ability to fool the discriminator
+
+            generator_optimizer.zero_grad()
+            g_loss = 1 - torch.mean(discriminator(gen_imgs))# * fake)
             g_loss.backward()
             generator_optimizer.step()
             total_g_loss += g_loss.item()
 
-            ## Training the Discriminator
-            # Measure discriminator's ability to classify real from generated samples
             discriminator_optimizer.zero_grad()
-            real_loss = d_loss(discriminator(real_imgs), valid)
-            fake_loss = d_loss(discriminator(gen_imgs.detach()), fake)
+            real_loss = 1 - torch.mean(discriminator(real_imgs))# * valid)
+            fake_loss = torch.mean(discriminator(gen_imgs.detach()))# * fake)
             dis_loss = (real_loss + fake_loss) / 2
             dis_loss.backward()
             discriminator_optimizer.step()
             total_d_loss += dis_loss.item()
+
+            # ## Training the Generator
+            # generator_optimizer.zero_grad()
+            # gen_input = Variable(Tensor(np.random.rand(batch_size, 16)).to(device)) # Noise for the generator input
+            # gen_imgs = generator(gen_input) # Generate a batch of images
+            # g_loss = wasserstein_loss(discriminator(gen_imgs), valid) #boundary_seeking_loss(discriminator(gen_imgs), valid) # Loss measures the generator's ability to fool the discriminator
+            # g_loss.backward()
+            # generator_optimizer.step()
+            # total_g_loss += g_loss.item()
+
+            # ## Training the Discriminator
+            # # Measure discriminator's ability to classify real from generated samples
+            # discriminator_optimizer.zero_grad()
+            # real_loss = d_loss(discriminator(real_imgs), valid)
+            # fake_loss = d_loss(discriminator(gen_imgs.detach()), fake)
+            # dis_loss = (real_loss + fake_loss) / 2
+            # dis_loss.backward()
+            # discriminator_optimizer.step()
+            # total_d_loss += dis_loss.item()
         
-        print('Generator Loss: ', total_g_loss)
-        print('Discriminator Loss: ', total_d_loss)
-        plot_data[epoch] = total_d_loss
+        print('Generator Loss: ', total_g_loss / i)
+        print('Discriminator Loss: ', total_d_loss / i)
+        plot_data[epoch][0] = total_g_loss / i
+        plot_data[epoch][1] = total_d_loss / i
 
     
     torch.save(generator.state_dict(), 'generator-model.pickle')
