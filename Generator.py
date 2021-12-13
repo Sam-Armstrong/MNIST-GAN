@@ -38,6 +38,18 @@ class Generator(nn.Module):
         self.deconv11 = nn.ConvTranspose2d(12, 12, kernel_size = 3, padding = 0, bias = False)
         self.deconv12 = nn.ConvTranspose2d(12, 1, kernel_size = 3, padding = 0, bias = False)
 
+        self.bn1 = nn.BatchNorm2d(3)
+        self.bn2 = nn.BatchNorm2d(6)
+        self.bn3 = nn.BatchNorm2d(12)
+        self.bn4 = nn.BatchNorm2d(12)
+        self.bn5 = nn.BatchNorm2d(12)
+        self.bn6 = nn.BatchNorm2d(12)
+        self.bn7 = nn.BatchNorm2d(12)
+        self.bn8 = nn.BatchNorm2d(12)
+        self.bn9 = nn.BatchNorm2d(12)
+        self.bn10 = nn.BatchNorm2d(12)
+        self.bn11 = nn.BatchNorm2d(12)
+
     def forward(self, x):
         # x = self.fc1(x)
         # x = self.bn(x)
@@ -59,28 +71,51 @@ class Generator(nn.Module):
         # x = self.relu(x)
         # x = x.reshape((x.shape[0], 1, 28, 28))
         x = x.reshape((x.shape[0], 1, 4, 4))
+
         x = self.deconv1(x)
         x = self.selu(x)
+        x = self.bn1(x)
+
         x = self.deconv2(x)
         x = self.selu(x)
+        x = self.bn2(x)
+
         x = self.deconv3(x)
         x = self.selu(x)
+        x = self.bn3(x)
+
         x = self.deconv4(x)
         x = self.selu(x)
+        x = self.bn4(x)
+
         x = self.deconv5(x)
         x = self.selu(x)
+        x = self.bn5(x)
+        
         x = self.deconv6(x)
         x = self.selu(x)
+        x = self.bn6(x)
+
         x = self.deconv7(x)
         x = self.selu(x)
+        x = self.bn7(x)
+
         x = self.deconv8(x)
         x = self.selu(x)
+        x = self.bn8(x)
+
         x = self.deconv9(x)
         x = self.selu(x)
+        x = self.bn9(x)
+        
         x = self.deconv10(x)
         x = self.selu(x)
+        x = self.bn10(x)
+
         x = self.deconv11(x)
         x = self.selu(x)
+        x = self.bn11(x)
+
         x = self.deconv12(x)
         x = self.relu(x)
         return x
